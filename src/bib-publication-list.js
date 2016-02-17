@@ -62,8 +62,8 @@ var bibtexify = (function($) {
         authors2html: function(authorData) {
             var authorsStr = '';
             for (var index = 0; index < authorData.length; index++) {
-                if (index > 0) { authorsStr += ", "; }
-                authorsStr += authorData[index].last;
+                if (index > 0) { authorsStr += " and "; }
+                authorsStr += bib2html.formatAuthor(authorData[index]);
             }
             return htmlify(authorsStr);
         },
@@ -71,11 +71,11 @@ var bibtexify = (function($) {
         links: function(entryData) {
             var itemStr = '';
             if (entryData.url && entryData.url.match(/.*\.pdf/)) {
-                itemStr += ' (<a title="PDF-version of this article" href="' +
-                            entryData.url + '">pdf<\/a>)';
+                itemStr += ' [<a title="PDF-version of this article" target="_blank" href="' +
+                            entryData.url + '">pdf<\/a>]';
             } else if (entryData.url) {
-                itemStr += ' (<a title="This article online" href="' + entryData.url +
-                            '">link<\/a>)';
+                itemStr += ' [<a title="This article online" target="_blank" href="' + entryData.url +
+                            '">link<\/a>]';
             }
             return itemStr;
         },
@@ -87,14 +87,14 @@ var bibtexify = (function($) {
                     content += '  author = { ';
                     for (var index = 0; index < value.length; index++) {
                         if (index > 0) { content += " and "; }
-                        content += value[index].last;
+                        content += bib2html.formatAuthor(value[index]);
                     }
                     content += ' },\n';
                 } else if (key == 'editor') {
                     content += '  author = { ';
                     for (var index = 0; index < value.length; index++) {
                         if (index > 0) { content += " and "; }
-                        content += value[index].last;
+                        content += bib2html.formatAuthor(value[index]);
                     }
                     content += ' },\n';
                 } else if (key != 'entryType' && key != 'cite') {
@@ -104,14 +104,41 @@ var bibtexify = (function($) {
             content += '}';
 
             var itemStr = '';
-            itemStr += '(<a title="This article as BibTeX" href="#" class="biblink" data-content="' + content + '">' +
-                        'bib</a>)';
+            itemStr += ' [<a title="This article as BibTeX" href="#" class="biblink" data-content="' + content + '">' +
+                        'bib</a>]';
             itemStr += '<div class="bibinfo hidden">';
             itemStr += '<a href="#" class="bibclose" title="Close">x</a><pre>';
             itemStr += content;
             itemStr += "</pre></div>";
 
             return itemStr;
+        },
+        // Returns the author formatted
+        formatAuthor: function(array) {
+            var authorstring = '';
+            if (array.first.length > 0)
+                authorstring += 'FIRST';
+            if (array.von.length > 0) {
+                if (authorstring.length > 0)
+                    authorstring += ' ';
+                authorstring += 'VON'
+            }
+            if (array.last.length > 0) {
+                if (authorstring.length > 0)
+                    authorstring += ' ';
+                authorstring += 'LAST'
+            }
+            if (array.jr.length > 0) {
+                if (authorstring.length > 0)
+                    authorstring += ' ';
+                authorstring += 'JR'
+            }
+            ret = authorstring;
+            ret = str_replace("VON", array['von'], ret);
+            ret = str_replace("LAST", array['last'], ret);
+            ret = str_replace("JR", array['jr'], ret);
+            ret = str_replace("FIRST", array['first'], ret);
+            return trim(ret);
         },
         // generates the twitter link for the entry
         tweet: function(entryData, bib) {
@@ -138,54 +165,132 @@ var bibtexify = (function($) {
         },
         // helper functions for formatting different types of bibtex entries
         inproceedings: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-                entryData.title + ". In <em>" + entryData.booktitle +
-                ", pp. " + entryData.pages +
-                ((entryData.address)?", " + entryData.address:"") + ".<\/em>";
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += entryData.title + ". ";
+            formatstring += "In <em>" + entryData.booktitle + "<\/em>, ";
+            formatstring += ((entryData.series) ? entryData.series + ", " : "");
+            formatstring += ((entryData.pages) ? "pages " + entryData.pages + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            formatstring += ((entryData.publisher) ? " " + entryData.publisher + "." : "");
+            return formatstring;
         },
         proceedings: function(entryData) {
-            return this.authors2html(entryData.editor) + " (" + entryData.year + "). " +
-                entryData.title + ". " + 
-                ((entryData.address)?", " + entryData.address:"");
+            var formatstring = '';
+            formatstring += this.authors2html(entryData.editor) + ', '
+            formatstring += ((entryData.editor.length > 1) ? "editors. " : "editor. ");
+            formatstring += "<em>" + entryData.title + "<\/em>, ";
+            formatstring += ((entryData.volume) ? "volume " + entryData.volume + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ". ";
+            if (entryData.organization && entryData.publisher) 
+                formatstring += entryData.organization + ", " + entryData.publisher;
+            else {
+                formatstring += ((entryData.organization) ? entryData.organization + "." : "");
+                formatstring += ((entryData.publisher) ? entryData.publisher + "." : "");
+            }
+            return formatstring;
         },
         article: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-                entryData.title + ". <em>" + entryData.journal + ", " + entryData.volume +
-                ((entryData.number)?"(" + entryData.number + ")":"")+ ", " +
-                "pp. " + entryData.pages + ". " +
-                ((entryData.address)?entryData.address + ".":"") + "<\/em>";
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += entryData.title + ". ";
+            formatstring += "<em>" + entryData.journal + "<\/em>, ";
+            formatstring += ((entryData.series) ? entryData.series + ", " : "");
+            if (entryData.volume || entryData.number) {
+                if (entryData.volume)
+                    formatstring += entryData.volume;
+                if (entryData.number)
+                    formatstring += "(" + entryData.number + ")";
+                if (entryData.pages)
+                    formatstring += ":" + entryData.pages;
+                formatstring += ", ";
+            }
+            else if (entryData.pages) {
+                formatstring += "pages " + entryData.pages + ", ";
+            }
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            return formatstring;
         },
         misc: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-                entryData.title + ". " +
-                ((entryData.howpublished)?entryData.howpublished + ". ":"") +
-                ((entryData.note)?entryData.note + ".":"");
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += entryData.title;
+            formatstring += ((entryData.year) ? ", " + entryData.year + "." : ".");
+            return formatstring;
         },
         mastersthesis: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-            entryData.title + ". " + entryData.type + ". " +
-            entryData.organization + ", " + entryData.school + ".";
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += "<em>" + entryData.title + "<\/em>. ";
+            formatstring += ((entryData.type) ? entryData.type + ", " : "");
+            formatstring += ((entryData.school) ? entryData.school + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            return formatstring;
         },
         techreport: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-                entryData.title + ". " + entryData.institution + ". " +
-                entryData.number + ". " + entryData.type + ".";
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += entryData.title + ". ";
+            formatstring += ((entryData.type) ? entryData.type : "Technical Report");
+            formatstring += ((entryData.number) ? " " + entryData.number + ", " : ", ");
+            formatstring += ((entryData.institute) ? entryData.institute + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            return formatstring;
         },
         book: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-                " <em>" + entryData.title + "<\/em>, " +
-                entryData.publisher + ", " + entryData.year +
-                ((entryData.issn)?", ISBN: " + entryData.issn + ".":".");
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += "<em>" + entryData.title + "<\/em>";
+            if (entryData.volume) {
+                formatstring += ", volume " + entryData.volume;
+                if (entryData.series) 
+                    formatstring += " of <em>" + entryData.series + "<\/em>";
+                formatstring += ". ";
+            }
+            else if (entryData.number) {
+                formatstring += ". Number " + entryData.number;
+                if (entryData.series) 
+                    formatstring += " in " + entryData.series + "";
+                formatstring += ". ";   
+            }
+            else if (entryData.series) {
+                formatstring += ". " + entryData.series + ". ";
+            }
+            formatstring += ((entryData.publisher) ? entryData.publisher + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.edition) ? "edition " + entryData.edition + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            return formatstring;
         },
         inbook: function(entryData) {
-            return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
-                entryData.chapter + " in <em>" + entryData.title + "<\/em>, " +
-                ((entryData.editor)?" Edited by " + entryData.editor + ", ":"") +
-                entryData.publisher + ", pp. " + entryData.pages + "" +
-                ((entryData.series)?", <em>" + entryData.series + "<\/em>":"") +
-                ((entryData.volume)?", Vol. " + entryData.volume + "":"") +
-                ((entryData.issn)?", ISBN: " + entryData.issn + "":"") +
-                ".";
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += "<em>" + entryData.title + "<\/em>. ";
+            if (entryData.volume) {
+                formatstring += "volume " + entryData.volume;
+                if (entryData.series) {
+                    formatstring += " of <em>" + entryData.series + "<\/em>";
+                }
+                formatstring += ", ";
+            }
+            if (entryData.chapter) {
+                formatstring += ((entryData.type) ? entryData.type + " " : "");
+                formatstring += entryData.chapter + ", ";       
+            }
+            formatstring += ((entryData.pages) ? "pages " + entryData.pages + ". " : "");
+            if (!entryData.volume && entryData.series) {
+                if (entryData.number) 
+                    formatstring += "Number " + entryData.number + " in ";    
+                formatstring += entryData.series + ". ";
+            }
+            formatstring += ((entryData.publisher) ? " " + entryData.publisher + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            return formatstring;
         },
         // weights of the different types of entries; used when sorting
         importance: {
