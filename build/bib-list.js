@@ -17386,6 +17386,18 @@ var bibtexify = (function($) {
             var formatstring = this.authors2html(entryData.author) + ". ";
             formatstring += "<em>" + entryData.title + "<\/em>. ";
             formatstring += ((entryData.type) ? entryData.type + ", " : "");
+            formatstring += "Master's thesis, "
+            formatstring += ((entryData.school) ? entryData.school + ", " : "");
+            formatstring += ((entryData.address) ? entryData.address + ", " : "");
+            formatstring += ((entryData.month) ? entryData.month + " " : "");
+            formatstring += entryData.year + ".";
+            return formatstring;
+        },
+        phdthesis: function(entryData) {
+            var formatstring = this.authors2html(entryData.author) + ". ";
+            formatstring += "<em>" + entryData.title + "<\/em>. ";
+            formatstring += ((entryData.type) ? entryData.type + ", " : "");
+            formatstring += "PhD thesis, "
             formatstring += ((entryData.school) ? entryData.school + ", " : "");
             formatstring += ((entryData.address) ? entryData.address + ", " : "");
             formatstring += ((entryData.month) ? entryData.month + " " : "");
@@ -17488,7 +17500,7 @@ var bibtexify = (function($) {
             'unpublished': 'Unpublished'}
     };
     // format a phd thesis similarly to masters thesis
-    bib2html.phdthesis = bib2html.mastersthesis;
+    // bib2html.phdthesis = bib2html.mastersthesis;
     // conference is the same as inproceedings
     bib2html.conference = bib2html.inproceedings;
 
