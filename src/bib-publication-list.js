@@ -81,24 +81,36 @@ var bibtexify = (function($) {
         },
         // adds the bibtex link and the opening div with bibtex content
         bibtex: function(entryData) {
-            var itemStr = '';
-            itemStr += ' (<a title="This article as BibTeX" href="#" class="biblink">' +
-                        'bib</a>)<div class="bibinfo hidden">';
-            itemStr += '<a href="#" class="bibclose" title="Close">x</a><pre>';
-            itemStr += '@' + entryData.entryType + "{" + entryData.cite + ",\n";
+            var content = '@' + entryData.entryType + "{" + entryData.cite + ",\n";
             $.each(entryData, function(key, value) {
                 if (key == 'author') {
-                    itemStr += '  author = { ';
+                    content += '  author = { ';
                     for (var index = 0; index < value.length; index++) {
-                        if (index > 0) { itemStr += " and "; }
-                        itemStr += value[index].last;
+                        if (index > 0) { content += " and "; }
+                        content += value[index].last;
                     }
-                    itemStr += ' },\n';
+                    content += ' },\n';
+                } else if (key == 'editor') {
+                    content += '  author = { ';
+                    for (var index = 0; index < value.length; index++) {
+                        if (index > 0) { content += " and "; }
+                        content += value[index].last;
+                    }
+                    content += ' },\n';
                 } else if (key != 'entryType' && key != 'cite') {
-                    itemStr += '  ' + key + " = { " + value + " },\n";
+                    content += '  ' + key + " = { " + value + " },\n";
                 }
             });
-            itemStr += "}</pre></div>";
+            content += '}';
+
+            var itemStr = '';
+            itemStr += '(<a title="This article as BibTeX" href="#" class="biblink" data-content="' + content + '">' +
+                        'bib</a>)';
+            itemStr += '<div class="bibinfo hidden">';
+            itemStr += '<a href="#" class="bibclose" title="Close">x</a><pre>';
+            itemStr += content;
+            itemStr += "</pre></div>";
+
             return itemStr;
         },
         // generates the twitter link for the entry
@@ -287,8 +299,25 @@ var bibtexify = (function($) {
           }
         });
         // attach the event handlers to the bib items
-        $(".biblink", this.$pubTable).live('click', EventHandlers.showbib);
-        $(".bibclose", this.$pubTable).live('click', EventHandlers.hidebib);
+        if ($.fn.modal) {
+            var modalStr = '';
+            modalStr += '<div class="ui modal bibtex segment">';
+            modalStr += '  <i class="close icon"></i>';
+            modalStr += '  <div class="description">';
+            modalStr += '    <p class="content"></p>';
+            modalStr += '  </div>';
+            modalStr += '</div>'; 
+            this.$pubTable.after(modalStr);
+            $(".biblink", this.$pubTable).on('click', function() {
+                var content = $(this).attr('data-content');
+                $('.modal.bibtex').find('.content').html(content.replace(/\n/g, "<br />"));
+                $('.modal.bibtex').modal('show');
+            });
+        }
+        else {
+            $(".biblink", this.$pubTable).on('click', EventHandlers.showbib);
+            $(".bibclose", this.$pubTable).on('click', EventHandlers.hidebib);
+        }
     };
     // updates the stats, called whenever a new bibtex entry is parsed
     bibproto.updateStats = function updateStats(item) {
