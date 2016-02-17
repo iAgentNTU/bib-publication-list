@@ -131,6 +131,11 @@ var bibtexify = (function($) {
                 ", pp. " + entryData.pages +
                 ((entryData.address)?", " + entryData.address:"") + ".<\/em>";
         },
+        proceedings: function(entryData) {
+            return this.authors2html(entryData.editor) + " (" + entryData.year + "). " +
+                entryData.title + ". " + 
+                ((entryData.address)?", " + entryData.address:"");
+        },
         article: function(entryData) {
             return this.authors2html(entryData.author) + " (" + entryData.year + "). " +
                 entryData.title + ". <em>" + entryData.journal + ", " + entryData.volume +
