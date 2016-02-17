@@ -1089,11 +1089,19 @@ BibTex.prototype = {
             if (this._options['validate']) {
                 this._generateWarning('STRING_ENTRY_NOT_YET_SUPPORTED', '', entry+'}');
             }
+            return;
         } else if ('@preamble' ==  strtolower(substr(entry, 0, 9))) {
             //Preamble not yet supported!
             if (this._options['validate']) {
                 this._generateWarning('PREAMBLE_ENTRY_NOT_YET_SUPPORTED', '', entry+'}');
             }
+            return;
+        } else if ('@comment' ==  strtolower(substr(entry, 0, 8))) {
+            //Comment not yet supported!
+            if (this._options['validate']) {
+                this._generateWarning('COMMENT_ENTRY_NOT_YET_SUPPORTED', '', entry+'}');
+            }
+            return;
         } else {
             //Parsing all fields
             while (strrpos(entry,'=') !== false) {
@@ -17700,15 +17708,24 @@ var bibtexify = (function($) {
         if (options.visualization) {
             $pubTable.before('<div id="' + bibElemId + 'pubchart" class="bibchart"></div>');
         }
-        var $bibSrc = $(bibsrc);
-        if ($bibSrc.length) { // we found an element, use its HTML as bibtex
-            new Bib2HTML($bibSrc.html(), $pubTable, options);
-            $bibSrc.hide();
-        } else { // otherwise we assume it is a URL
+        try {
+            var $bibSrc = $(bibsrc);
+            if ($bibSrc.length) { // we found an element, use its HTML as bibtex
+                new Bib2HTML($bibSrc.html(), $pubTable, options);
+                $bibSrc.hide();
+            } else { // otherwise we assume it is a URL
+                var callbackHandler = function(data) {
+                    new Bib2HTML(data, $pubTable, options);
+                };
+                $.get(bibsrc, callbackHandler, "text");
+            }
+        }
+        catch(err) {
             var callbackHandler = function(data) {
                 new Bib2HTML(data, $pubTable, options);
             };
             $.get(bibsrc, callbackHandler, "text");
+            console.log('error');
         }
     };
 })(jQuery);
