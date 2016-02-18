@@ -17231,7 +17231,6 @@ var bibtexify = (function($) {
         // converts the given author data into HTML
         authors2html: function(authorData) {
             var authorsStr = '';
-            console.log(authorData);
             for (var index = 0; index < authorData.length - 1; index++) {
                 if (index > 0) 
                     authorsStr += ", ";
@@ -17760,7 +17759,6 @@ var bibtexify = (function($) {
                 new Bib2HTML(data, $pubTable, options);
             };
             $.get(bibsrc, callbackHandler, "text");
-            console.log('error');
         }
     };
 })(jQuery);
