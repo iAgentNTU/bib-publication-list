@@ -61,9 +61,17 @@ var bibtexify = (function($) {
         // converts the given author data into HTML
         authors2html: function(authorData) {
             var authorsStr = '';
-            for (var index = 0; index < authorData.length; index++) {
-                if (index > 0) { authorsStr += " and "; }
-                authorsStr += bib2html.formatAuthor(authorData[index]);
+            console.log(authorData);
+            for (var index = 0; index < authorData.length - 1; index++) {
+                if (index > 0) 
+                    authorsStr += ", ";
+                authorsStr += bib2html.author2html(authorData[index]);
+            }
+            if (authorData.length == 1)
+                authorsStr += bib2html.author2html(authorData[0]);   
+            if (authorData.length > 1) {
+                authorsStr += " and ";
+                authorsStr += bib2html.author2html(authorData[authorData.length - 1]);
             }
             return htmlify(authorsStr);
         },
@@ -87,14 +95,14 @@ var bibtexify = (function($) {
                     content += '  author = { ';
                     for (var index = 0; index < value.length; index++) {
                         if (index > 0) { content += " and "; }
-                        content += bib2html.formatAuthor(value[index]);
+                        content += bib2html.author2bibtex(value[index]);
                     }
                     content += ' },\n';
                 } else if (key == 'editor') {
                     content += '  author = { ';
                     for (var index = 0; index < value.length; index++) {
                         if (index > 0) { content += " and "; }
-                        content += bib2html.formatAuthor(value[index]);
+                        content += bib2html.author2bibtex(value[index]);
                     }
                     content += ' },\n';
                 } else if (key != 'entryType' && key != 'cite') {
@@ -114,24 +122,51 @@ var bibtexify = (function($) {
             return itemStr;
         },
         // Returns the author formatted
-        formatAuthor: function(array) {
+        author2html: function(array) {
             var authorstring = '';
             if (array.first.length > 0)
                 authorstring += 'FIRST';
             if (array.von.length > 0) {
                 if (authorstring.length > 0)
                     authorstring += ' ';
-                authorstring += 'VON'
+                authorstring += 'VON';
             }
             if (array.last.length > 0) {
                 if (authorstring.length > 0)
                     authorstring += ' ';
-                authorstring += 'LAST'
+                authorstring += 'LAST';
             }
             if (array.jr.length > 0) {
                 if (authorstring.length > 0)
                     authorstring += ' ';
-                authorstring += 'JR'
+                authorstring += 'JR';
+            }
+            ret = authorstring;
+            ret = str_replace("VON", array['von'], ret);
+            ret = str_replace("LAST", array['last'], ret);
+            ret = str_replace("JR", array['jr'], ret);
+            ret = str_replace("FIRST", array['first'], ret);
+            return trim(ret);
+        },
+        // Returns the author formatted
+        author2bibtex: function(array) {
+            var authorstring = '';
+            if (array.von.length > 0)
+                authorstring += 'VON';
+            if (array.last.length > 0) {
+                if (authorstring.length > 0)
+                    authorstring += ' ';
+                authorstring += 'LAST';
+            }
+            if (array.jr.length > 0) {
+                if (authorstring.length > 0)
+                    authorstring += ', ';
+                authorstring += 'JR';
+            }
+            if (array.first.length > 0) {
+                if (authorstring.length > 0)
+                    authorstring += ', ';
+                authorstring += 'FIRST';
             }
             ret = authorstring;
             ret = str_replace("VON", array['von'], ret);
